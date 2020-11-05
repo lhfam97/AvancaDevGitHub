@@ -1,8 +1,9 @@
-import * as React from "react";
 import { createChart, CrosshairMode, ISeriesApi } from "lightweight-charts";
-import "./index.css";
-import { Legend } from "../Legend";
+import * as React from "react";
 import { cryptoHttp } from "../../http";
+import { Legend } from "../Legend";
+import "./index.css";
+
 interface ChartProps {
   coin: string;
 }
@@ -14,45 +15,8 @@ export const Chart: React.FC<ChartProps> = (props) => {
   >;
   const [prices, setPrices] = React.useState<any[]>([]);
   const [chartLoaded, setChartLoaded] = React.useState(false);
-  React.useEffect(() => {
-    if (!chartLoaded) {
-      return;
-    }
-
-    cryptoHttp
-      .get(`histoday?fsym=${coin}&tsym=BRL&limit=300`)
-      .then((response) => {
-        const prices = response.data.Data.map(
-          (row: {
-            time: any;
-            low: any;
-            high: any;
-            open: any;
-            close: any;
-            volumefrom: any;
-          }) => ({
-            time: row.time,
-            low: row.low,
-            high: row.high,
-            open: row.open,
-            close: row.close,
-            volume: row.volumefrom,
-          })
-        );
-        setPrices(prices);
-      });
-  }, [coin, chartLoaded]);
-  React.useEffect(() => {
-    if (candleSeriesRef.current) {
-      candleSeriesRef.current.setData(prices);
-    }
-  }, [prices]);
 
   React.useEffect(() => {
-    if (!chartLoaded) {
-      return;
-    }
-
     const interval = setInterval(() => {
       cryptoHttp
         .get(`histominute?fsym=${coin}&tsym=BRL&limit=1`)
@@ -72,9 +36,28 @@ export const Chart: React.FC<ChartProps> = (props) => {
           });
         });
     }, 60000);
-
     return () => clearInterval(interval);
   }, [coin]);
+
+  React.useEffect(() => {
+    if (!chartLoaded) {
+      return;
+    }
+    cryptoHttp
+      .get(`histoday?fsym=${coin}&tsym=BRL&limit=300`)
+      .then((response) => {
+        const prices = response.data.Data.map((row: any) => ({
+          time: row.time,
+          low: row.low,
+          high: row.high,
+          open: row.open,
+          close: row.close,
+          volume: row.volumefrom,
+        }));
+        setPrices(prices);
+      });
+  }, [coin, chartLoaded]);
+
   React.useEffect(() => {
     if (candleSeriesRef.current) {
       candleSeriesRef.current.setData(prices);
@@ -112,6 +95,7 @@ export const Chart: React.FC<ChartProps> = (props) => {
         borderColor: "#485c7b",
       },
     });
+
     candleSeriesRef.current = chart.addCandlestickSeries({
       upColor: "#4bffb5",
       downColor: "#ff4976",
@@ -125,7 +109,7 @@ export const Chart: React.FC<ChartProps> = (props) => {
 
   return (
     <div className="Chart" ref={containerRef}>
-      <Legend legend={coin}></Legend>
+      <Legend legend={coin} />
     </div>
   );
 };
